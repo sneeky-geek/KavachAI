@@ -56,6 +56,16 @@ function Quiz() {
     }
   };
 
+   const prev = () => {
+    if (index > 0) {
+      setIndex((prev) => prev - 1);
+      setLock(false);
+      option_array.forEach((option) => {
+        option.current?.classList.remove("wrong", "correct");
+      });
+    }
+  };
+
   const reset = () => {
     setIndex(0);
     setScore(0);
@@ -78,6 +88,7 @@ function Quiz() {
             <li ref={option4} onClick={(e) => checkAns(e, 4)}>{question.option4}</li>
           </ul>
           <button onClick={next}> Next </button>
+          <button onClick={prev}> Previous </button>
           <div className="index">{index + 1} of {data.length} questions </div>
         </>
       ) : (
