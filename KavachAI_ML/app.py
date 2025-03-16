@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify
 import joblib
+from flask_cors import CORS
+
 import numpy as np
 
 app = Flask(__name__)
+CORS(app)
 
 # Load your model
 with open('kavachai_model.pkl', 'rb') as f:

@@ -40,6 +40,11 @@ function Quiz() {
   const [userAnswers, setUserAnswers] = useState<AnswerState[]>(
     Array(data.length).fill({ selectedOption: null, isCorrect: false })
   );
+  
+  // Proctoring state
+  const [quizActive, setQuizActive] = useState<boolean>(true);
+  const [cheatingLevel, setCheatingLevel] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const option1 = useRef<HTMLLIElement | null>(null);
   const option2 = useRef<HTMLLIElement | null>(null);
@@ -167,6 +172,8 @@ function Quiz() {
     
     if (lock) {
       if (index === data.length - 1) {
+        setQuizActive(false); // Signal to ProctoringTracker that quiz is done
+        setIsLoading(true); // Show loading indicator while waiting for ML model
         setResult(true);
         return;
       }
@@ -202,6 +209,8 @@ function Quiz() {
     if (textInputRef.current) {
       textInputRef.current.classList.remove("correct", "wrong");
     }
+    setCheatingLevel(null);
+    setQuizActive(true); // Restart proctoring
   };
 
   const quit = () => {
@@ -220,9 +229,36 @@ function Quiz() {
     return "Keep practicing!";
   };
 
+  // Handle proctoring result
+  const handleProctoringResult = (result: string) => {
+    setIsLoading(false);
+    setCheatingLevel(result);
+  };
+
+  // Get CSS class for cheating level indicator
+  const getCheatingLevelClass = () => {
+    if (!cheatingLevel) return "";
+    
+    switch(cheatingLevel.toLowerCase()) {
+      case "low":
+        return "cheating-low";
+      case "medium":
+        return "cheating-medium";
+      case "high":
+        return "cheating-high";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="container">
-      <ProctoringTracker /> {/* Ensure it renders */}
+      <ProctoringTracker 
+        apiUrl="/api/proctoring" // This will be ignored as we'll send directly to ML model
+        isQuizActive={quizActive}
+        onQuizEnd={handleProctoringResult}
+      />
+
       <h1> TEST AREA </h1>
       <hr />
       {!result ? (
@@ -293,6 +329,24 @@ function Quiz() {
               <p className="score-breakdown">Incorrect answers: {data.length - score}</p>
             </div>
           </div>
+          
+          {/* Proctoring analysis result */}
+          <div className="proctoring-analysis">
+            <h3>Behavioral Analysis</h3>
+            {isLoading ? (
+              <div className="loading-indicator">
+                <div className="spinner"></div>
+                <p>Analyzing quiz behavior...</p>
+              </div>
+            ) : cheatingLevel ? (
+              <div className={`cheating-level ${getCheatingLevelClass()}`}>
+                <p>Suspicious Activity Level: <span>{cheatingLevel}</span></p>
+              </div>
+            ) : (
+              <p>Analysis pending...</p>
+            )}
+          </div>
+          
           <div className="result-buttons">
             <button onClick={reset} className="restart-btn">Restart Quiz</button>
             <button onClick={quit} className="quit-btn">Quit</button>

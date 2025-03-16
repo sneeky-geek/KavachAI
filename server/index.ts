@@ -1,11 +1,15 @@
-import express, { type Request, Response, NextFunction } from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { connectDB } from "./db"; // MongoDB connection function
 
 const app = express();
+
+// Global middleware for JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Request/Response Logger Middleware (for /api routes)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -36,32 +40,43 @@ app.use((req, res, next) => {
   next();
 });
 
+// Async IIFE to bootstrap the server
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    // 1. Connect to MongoDB
+    await connectDB();
+    console.log("✅ Connected to MongoDB");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // 2. Register API Routes (Proctoring, Users, etc.)
+    const server = await registerRoutes(app);
+    console.log("✅ Routes registered");
 
-    res.status(status).json({ message });
-    throw err;
-  });
+    // 3. Global Error Handler (Must come after routes)
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
+      console.error("❌ Error:", message);
+      res.status(status).json({ message });
+    });
+
+    // 4. Setup Frontend Serving
+    if (app.get("env") === "development") {
+      console.log("🛠️ Setting up Vite for development");
+      await setupVite(app, server);
+    } else {
+      console.log("🚀 Serving static files in production");
+      serveStatic(app);
+    }
+
+    // 5. Start the HTTP Server
+    const PORT = 5003; // Unified port for API + Frontend
+    server.listen(PORT, () => {
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("❌ Server failed to start:", error);
+    process.exit(1);
   }
-
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5001;
-  server.listen(5003, () => {
-    console.log("Server running on port 5003");
-  });
-  
 })();
