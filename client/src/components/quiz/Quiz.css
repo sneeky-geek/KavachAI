@@ -397,4 +397,141 @@
   .restart-btn, .quit-btn {
     width: 100%;
   }
+}.container{
+  width: 640px;
+  margin: auto;
+  margin-top: 150px;
+  background: white;
+  color: #262626;
+  display:flex;
+  flex-direction: column;
+  gap:20px;
+  border-radius: 10px;
+  padding:40px 50px;
 }
+.container hr{
+  height:2px;
+  border:none;
+  background: #707070;
+}
+.container h2{
+  font-size: 27px;
+  font-weight: 500;
+}
+.container ul li{
+display: flex;
+align-items: center;
+height: 70px;
+padding-left: 15px;
+border: 1px solid #686868;
+border-radius: 8px;
+margin-bottom: 2px;
+font-size: 20px;
+cursor:pointer;
+}
+.container button{
+  margin: auto;
+  width: 250px;
+  height:65px;
+  background: #553f9a;
+  color: #fff;
+  font-size: 25px;
+  font-weight:500;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.container .index{
+  margin:auto;
+  font-size: 18px;
+}
+.container .correct{
+  background: #dffff2;
+  border-color: #00d397;
+}
+.container .wrong{
+  background: #FFEBEB;
+  border-color: #FF4A4A;
+}
+
+/* Text input styling */
+.container .text-input {
+  height: 70px;
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #686868;
+  border-radius: 8px;
+  margin-bottom: 2px;
+  font-size: 20px;
+  outline: none;
+  color: black;
+}
+
+.container .text-input.correct {
+  background: #dffff2;
+  border-color: #00d397;
+}
+
+.container .text-input.wrong {
+  background: #FFEBEB;
+  border-color: #FF4A4A;
+}
+
+/* Animation classes */
+.question-transition {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Progress bar */
+.progress-bar {
+  width: 100%;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #553f9a;
+  transition: width 0.3s ease;
+}
+
+/* Button group */
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 20px;
+}
+
+.button-group button {
+  flex: 1;
+  margin: 0;
+}
+
+.button-group .disabled {
+  background-color: #a8a8a8;
+  cursor: not-allowed;
+}
+
+/* Results styling */
+.result-container {
+  text-align: center;
+}
+
+.result-title {
+  font-size: 32px;
+  margin-bottom: 30px;
+}
+
+.score-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30}

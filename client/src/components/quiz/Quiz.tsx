@@ -3,17 +3,27 @@ import ProctoringTracker from "./ProctoringTracker";
 import './Quiz.css';
 import { data } from "./assets/data";
 
-interface Question {
+interface MultipleChoiceQuestion {
   question: string;
   option1: string;
   option2: string;
   option3: string;
   option4: string;
   ans: number;
+  type: "multiple";
 }
+
+interface TextInputQuestion {
+  question: string;
+  correctAnswer: string;
+  type: "text";
+}
+
+type Question = MultipleChoiceQuestion | TextInputQuestion;
 
 interface AnswerState {
   selectedOption: number | null;
+  textAnswer?: string;
   isCorrect: boolean;
 }
 
@@ -24,6 +34,8 @@ function Quiz() {
   const [score, setScore] = useState<number>(0);
   const [result, setResult] = useState<boolean>(false);
   const [fadeState, setFadeState] = useState<string>("question-transition");
+  const [textAnswer, setTextAnswer] = useState<string>("");
+  
   // Track user answers for each question
   const [userAnswers, setUserAnswers] = useState<AnswerState[]>(
     Array(data.length).fill({ selectedOption: null, isCorrect: false })
@@ -33,12 +45,32 @@ function Quiz() {
   const option2 = useRef<HTMLLIElement | null>(null);
   const option3 = useRef<HTMLLIElement | null>(null);
   const option4 = useRef<HTMLLIElement | null>(null);
+  const textInputRef = useRef<HTMLInputElement | null>(null);
   const option_array = [option1, option2, option3, option4];
 
   useEffect(() => {
     setQuestion(data[index]);
     
-    // Apply previous answer classes when navigating between questions
+    // For text input questions, restore previous answers if they exist
+    if (data[index].type === "text") {
+      if (userAnswers[index].textAnswer) {
+        setTextAnswer(userAnswers[index].textAnswer || "");
+        if (textInputRef.current) {
+          textInputRef.current.classList.remove("correct", "wrong");
+          textInputRef.current.classList.add(userAnswers[index].isCorrect ? "correct" : "wrong");
+        }
+        setLock(true);
+      } else {
+        setTextAnswer("");
+        if (textInputRef.current) {
+          textInputRef.current.classList.remove("correct", "wrong");
+        }
+        setLock(false);
+      }
+      return;
+    }
+    
+    // Apply previous answer classes when navigating between multiple choice questions
     if (userAnswers[index].selectedOption !== null) {
       const selectedOption = userAnswers[index].selectedOption;
       
@@ -51,7 +83,7 @@ function Quiz() {
             option.current.classList.add("selected");
           }
           
-          if (!userAnswers[index].isCorrect && i + 1 === question.ans) {
+          if (!userAnswers[index].isCorrect && data[index].type === "multiple" && i + 1 === data[index].ans) {
             option.current.classList.add("correct");
           }
         }
@@ -68,7 +100,7 @@ function Quiz() {
   }, [index, userAnswers]);
 
   const checkAns = (e: React.MouseEvent<HTMLLIElement>, ans: number) => {
-    if (!lock) {
+    if (!lock && question.type === "multiple") {
       const isCorrect = question.ans === ans;
       
       // Update user answers state
@@ -91,7 +123,48 @@ function Quiz() {
     }
   };
 
+  const checkTextAnswer = () => {
+    if (!lock && question.type === "text" && textAnswer.trim() !== "") {
+      const isCorrect = textAnswer.trim().toLowerCase() === question.correctAnswer.toLowerCase();
+      
+      // Update user answers state
+      const newUserAnswers = [...userAnswers];
+      newUserAnswers[index] = { selectedOption: null, textAnswer: textAnswer, isCorrect };
+      setUserAnswers(newUserAnswers);
+      
+      // Update score and visual feedback
+      if (isCorrect) {
+        setScore(prev => prev + 1);
+        textInputRef.current?.classList.add("correct");
+      } else {
+        textInputRef.current?.classList.add("wrong");
+      }
+      
+      setLock(true);
+    }
+  };
+
+  const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTextAnswer(e.target.value);
+  };
+
+  const handleTextInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !lock) {
+      checkTextAnswer();
+    }
+    
+    // Prevent copy operation
+    if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+      e.preventDefault();
+    }
+  };
+
   const next = () => {
+    if (question.type === "text" && !lock && textAnswer.trim() !== "") {
+      checkTextAnswer();
+      return;
+    }
+    
     if (lock) {
       if (index === data.length - 1) {
         setResult(true);
@@ -121,10 +194,14 @@ function Quiz() {
     setScore(0);
     setLock(false);
     setResult(false);
+    setTextAnswer("");
     setUserAnswers(Array(data.length).fill({ selectedOption: null, isCorrect: false }));
     option_array.forEach(option => {
       option.current?.classList.remove("correct", "wrong", "selected");
     });
+    if (textInputRef.current) {
+      textInputRef.current.classList.remove("correct", "wrong");
+    }
   };
 
   const quit = () => {
@@ -152,12 +229,28 @@ function Quiz() {
         <>
           <div className={fadeState}>
             <h2>{index + 1}. {question.question}</h2>
-            <ul>
-              <li ref={option1} onClick={(e) => checkAns(e, 1)}>{question.option1}</li>
-              <li ref={option2} onClick={(e) => checkAns(e, 2)}>{question.option2}</li>
-              <li ref={option3} onClick={(e) => checkAns(e, 3)}>{question.option3}</li>
-              <li ref={option4} onClick={(e) => checkAns(e, 4)}>{question.option4}</li>
-            </ul>
+            {question.type === "multiple" ? (
+              <ul>
+                <li ref={option1} onClick={(e) => checkAns(e, 1)}>{question.option1}</li>
+                <li ref={option2} onClick={(e) => checkAns(e, 2)}>{question.option2}</li>
+                <li ref={option3} onClick={(e) => checkAns(e, 3)}>{question.option3}</li>
+                <li ref={option4} onClick={(e) => checkAns(e, 4)}>{question.option4}</li>
+              </ul>
+            ) : (
+              <input
+                type="text"
+                ref={textInputRef}
+                className="text-input"
+                value={textAnswer}
+                onChange={handleTextInputChange}
+                onKeyDown={handleTextInputKeyDown}
+                placeholder="Type your answer here..."
+                disabled={lock}
+                onCopy={(e) => e.preventDefault()}
+                onPaste={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
+              />
+            )}
           </div>
           <div className="progress-bar">
             <div 
