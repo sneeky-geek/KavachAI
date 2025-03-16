@@ -28,42 +28,12 @@ function Quiz() {
   const [userAnswers, setUserAnswers] = useState<AnswerState[]>(
     Array(data.length).fill({ selectedOption: null, isCorrect: false })
   );
-  // Simple timer state
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  
+
   const option1 = useRef<HTMLLIElement | null>(null);
   const option2 = useRef<HTMLLIElement | null>(null);
   const option3 = useRef<HTMLLIElement | null>(null);
   const option4 = useRef<HTMLLIElement | null>(null);
   const option_array = [option1, option2, option3, option4];
-
-  // Simple timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    
-    if (!result) {
-      interval = setInterval(() => {
-        setElapsedTime(prev => prev + 1);
-      }, 1000);
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [result]);
-
-  // Format time as HH:MM:SS
-  const formatTime = (timeInSeconds: number): string => {
-    const hours = Math.floor(timeInSeconds / 3600);
-    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-    const seconds = timeInSeconds % 60;
-    
-    return [
-      hours.toString().padStart(2, '0'),
-      minutes.toString().padStart(2, '0'),
-      seconds.toString().padStart(2, '0')
-    ].join(':');
-  };
 
   useEffect(() => {
     setQuestion(data[index]);
@@ -151,7 +121,6 @@ function Quiz() {
     setScore(0);
     setLock(false);
     setResult(false);
-    setElapsedTime(0);
     setUserAnswers(Array(data.length).fill({ selectedOption: null, isCorrect: false }));
     option_array.forEach(option => {
       option.current?.classList.remove("correct", "wrong", "selected");
@@ -177,12 +146,6 @@ function Quiz() {
   return (
     <div className="container">
       <ProctoringTracker /> {/* Ensure it renders */}
-      
-      {/* Simple Timer Display */}
-      <div className="simple-timer">
-        Time: {formatTime(elapsedTime)}
-      </div>
-      
       <h1> TEST AREA </h1>
       <hr />
       {!result ? (
@@ -213,7 +176,6 @@ function Quiz() {
       ) : (
         <div className="result-container">
           <h2 className="result-title">Quiz Completed!</h2>
-          <div className="time-result">Time taken: {formatTime(elapsedTime)}</div>
           <div className="score-card">
             <div className="score-circle">
               <svg viewBox="0 0 36 36" className="circular-chart">
