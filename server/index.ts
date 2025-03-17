@@ -1,9 +1,13 @@
 import express, { type Request, type Response, type NextFunction } from "express";
+import cors from "cors"; // Import cors
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { connectDB } from "./db"; // MongoDB connection function
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors());
 
 // Global middleware for JSON and URL-encoded data
 app.use(express.json());
